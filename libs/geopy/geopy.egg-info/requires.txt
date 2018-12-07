@@ -1,0 +1,16 @@
+geographiclib<2,>=1.49
+
+[dev]
+coverage
+flake8<3.6.0,>=3.5.0
+mock
+pytest>=3
+six
+sphinx
+sphinx_rtd_theme>=0.4.0
+
+[dev:python_version < "3.0"]
+contextlib2
+
+[timezone]
+pytz

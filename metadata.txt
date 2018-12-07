@@ -1,0 +1,31 @@
+[general]
+name=Geocode
+qgisMinimumVersion=2.0
+description=Geocoding plugin
+version=0.1
+author=Wojciech Sukta
+email=suktaa.wojciech@gmail.com
+
+about= This plugin allows user to geocode with following services:Pelias, Nominatim(OSM), GoogleV3, Photon. The ressults are stored in temporary layer with addres infromation, X and Y coorndinates and geocoder service name.
+
+tracker=http://bugs
+repository=http://repo
+# End of mandatory metadata
+
+# Recommended items:
+
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=python
+
+homepage=http://homepage
+category=Plugins
+icon=icon.png
+# experimental flag
+experimental=True
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
