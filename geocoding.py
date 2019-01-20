@@ -28,7 +28,7 @@ import resources
 from geocoding_dialog import Geocode_Dialog
 from select_address_box import select_box
 from qgis.gui import QgsGenericProjectionSelector
-import os.path
+import os
 import sys
 
 
@@ -36,10 +36,16 @@ import sys
 class Geocode:
 
     def __init__(self, iface):
+        self.pelias_domain='localhost:4000'
+        self.epsg=4326
         self.selected_geocoder=''
         self.id_layer=''
+        self.encode_addr=''
         self.iface = iface
         self.canvas=iface.mapCanvas()
+        libpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'libs')
+        if not libpath in sys.path:
+            sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'libs'))
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         self.dlg = Geocode_Dialog()
@@ -49,6 +55,7 @@ class Geocode:
             self.plugin_dir,
             'i18n',
             'Geocode_{}.qm'.format(locale))
+
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -65,7 +72,8 @@ class Geocode:
         self.toolbar = self.iface.addToolBar(u'Geocode')
         self.toolbar.setObjectName(u'Geocode')
         self.dlg.pelias_domain.setPlaceholderText("Enter domain without http index e.g. 'localhost:4000'")
-        self.dlg.google_api.setPlaceholderText("Enter your Google api key")
+        self.dlg.service_api.setPlaceholderText("Enter your Google or Bing Maps api key")
+        self.dlg.epsg_data.setPlaceholderText("Enter EPSG code of reference data, default : 4326")
 
 
     def __del__(self):
@@ -131,7 +139,7 @@ class Geocode:
         del self.toolbar
 
     def choose_geocoder(self):
-        geocoder_list = ["Pelias","GoogleV3","Nominatim", "Photon"]
+        geocoder_list = ["Pelias","GoogleV3","Nominatim", "Bing"]
         return geocoder_list
 
     def set_projection(self):
@@ -143,7 +151,9 @@ class Geocode:
 
     def coord_transformation(self,point,proj):
         act_crs = QgsCoordinateReferenceSystem()
-        act_crs.createFromSrid(4326)
+        if len(self.dlg.epsg_data.text())>=4:
+            self.epsg=int(self.dlg.epsg_data.text())
+        act_crs.createFromSrid(self.epsg)
         dest_crs = QgsCoordinateReferenceSystem(proj)
         tr = QgsCoordinateTransform(act_crs,dest_crs)
         point_after_transformation = tr.transform(point)
@@ -151,11 +161,9 @@ class Geocode:
 
 
     def geocoder_instacne(self):
-        google_api = self.dlg.google_api.text()
+        service_api = self.dlg.service_api.text()
         if len(self.dlg.pelias_domain.text())>0:
-            pelias_domain = self.dlg.pelias_domain.text()
-        else:
-            pelias_domain = 'localhost:4000'
+            self.pelias_domain = self.dlg.pelias_domain.text()
         geocoder_list=self.choose_geocoder()
         self.selected_geocoder= geocoder_list[self.dlg.geocoder_box.currentIndex()]
         geocoder_class = self.selected_geocoder
@@ -166,18 +174,22 @@ class Geocode:
             self.geocoders = geocoders
         geocoder = getattr(self.geocoders,geocoder_class)
         if self.selected_geocoder == u'Pelias':
-            return geocoder(domain = pelias_domain,timeout=20,scheme='http'),self.selected_geocoder
-        elif self.selected_geocoder == u'GoogleV3':
-            return geocoder(api_key=google_api),self.selected_geocoder
+            return geocoder(domain = self.pelias_domain,timeout=20,scheme='http'),self.selected_geocoder
+        elif self.selected_geocoder == u'GoogleV3' or self.selected_geocoder ==u'Bing':
+            return geocoder(api_key=service_api,timeout=20),self.selected_geocoder
         elif self.selected_geocoder==u'Nominatim':
-            return geocoder(user_agent="Geocoder_by"),self.selected_geocoder
+            return geocoder(user_agent="Geocode_Qgis_Plugin",timeout=20),self.selected_geocoder
         else:
-            return geocoder(), self.selected_geocoder
+            return geocoder(timeout=20), self.selected_geocoder
 
     def proccesing_point(self,point,place):
+        self.point_lon_lat=point
         point = QgsPoint(point[1], point[0])
         self.iface.mapCanvas().mapRenderer().setDestinationCrs(QgsCoordinateReferenceSystem(self.sel_proj))
-        point_trf = self.coord_transformation(point,self.sel_proj)
+        if self.epsg == self.sel_proj:
+            point_trf = point
+        else:
+            point_trf = self.coord_transformation(point,self.sel_proj)
         self.canvas.setCenter(point_trf)
         self.canvas.zoomScale(1000)
         self.canvas.refresh()
@@ -188,10 +200,14 @@ class Geocode:
             self.layer= QgsVectorLayer("Point","Results of Geocoding", "memory")
             self.provider = self.layer.dataProvider()
             self.layer.setCrs(self.canvas.mapRenderer().destinationCrs())
-            self.provider.addAttributes([QgsField("address", QVariant.String)])
+            self.provider.addAttributes([QgsField("Addres information from layer", QVariant.String)])
+            self.provider.addAttributes([QgsField("Address result", QVariant.String)])
             self.provider.addAttributes([QgsField("X_coordinate", QVariant.Double)])
             self.provider.addAttributes([QgsField("Y_coordinate", QVariant.Double)])
+            self.provider.addAttributes([QgsField("LON_WGS84", QVariant.Double)])
+            self.provider.addAttributes([QgsField("LAT_WGS84", QVariant.Double)])
             self.provider.addAttributes([QgsField("Geocoder", QVariant.String)])
+
             self.layer.updateFields()
             QgsMapLayerRegistry.instance().addMapLayer(self.layer)
         self.id_layer = self.layer.id()
@@ -199,9 +215,12 @@ class Geocode:
         field = self.layer.pendingFields()
         feat = QgsFeature(field)
         feat.setGeometry(QgsGeometry.fromPoint(point))
-        feat['address'] = address
-        feat['X_coordinate'] = point[1]
-        feat['Y_coordinate'] = point[0]
+        feat['Addres information from layer']=self.encode_addr.decode('utf-8')
+        feat['Address result'] = address
+        feat['X_coordinate'] = point[0]
+        feat['Y_coordinate'] = point[1]
+        feat['LON_WGS84']=self.point_lon_lat[1]
+        feat['LAT_WGS84']=self.point_lon_lat[0]
         feat['Geocoder']= self.geocoder_instacne()[1]
         self.provider.addFeatures([ feat ])
         self.layer.updateExtents()
@@ -246,25 +265,55 @@ class Geocode:
             message_layer_field = QMessageBox.information(self.iface.mainWindow(), QCoreApplication.translate(u'Geocode',u'You need to select the sting type column '),QCoreApplication.translate(u'Geocdoe',u'Check that selected column is of the string type                              '))
             return message_layer_field
 
+    def check_the_geocoding_result(self,result_from_geocoder):
+
+        import json
+        from shapely.geometry import shape, Point
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Utils')
+        file_to_open=file_path + '/'+'Poland_AL2.GeoJson'
+        checked_result=[]
+        with open(file_to_open,'r') as file_with_boundary:
+            js=json.load(file_with_boundary)
+
+
+        if result_from_geocoder != None:
+            for place,point in result_from_geocoder:
+                for feature in js['features']:
+                    polygon = shape(feature['geometry'])
+                    point_to_check=Point(point[1],point[0])
+                    if polygon.contains(point_to_check):
+                        checked_result.append((place, point))
+            if len(checked_result)>0:
+                return checked_result
+            else:
+                return None
+        else:
+            return None
+
+
 
     def geocoding(self,execute):
 
-        if execute and self.check_that_layer_field_is_string()==True:
+        if execute :
             self.sel_proj = self.set_projection()
+            list_of_ungeocoded_address=[]
+            list_of_ungeocoded_address.append('\n')
             for feat in self.selected_layer.getFeatures():
                 attrs = feat.attributes()
                 result_places={}
                 geocoder = self.geocoder_instacne()[0]
                 str_addr =attrs[self.dlg.column_combo.currentIndex()]
                 encode_addr= str_addr.encode('utf-8')
+                self.encode_addr=encode_addr
                 geocoding_result = geocoder.geocode(encode_addr, exactly_one=False)
+                geocoding_result=self.check_the_geocoding_result(geocoding_result)
                 if geocoding_result:
                     if self.geocoder_instacne()[1] == u'Pelias':
                         len_of_raw_resoult = len(geocoding_result)
                         cnt = len_of_raw_resoult
                         for place, point in geocoding_result:
                             raw_result = geocoding_result[(len_of_raw_resoult - cnt)]
-                            place = raw_result.raw[u'properties'][u'label'] + '[match type:' + raw_resoult.raw[u'properties'][u'match_type'] + ']'
+                            place = raw_result.raw[u'properties'][u'label']  +', postcode: '+raw_result.raw[u'properties'][u'postalcode']+ ', county: '+ raw_result.raw[u'properties'][u'county']+', accuracy parameters ' + '[ match type:' + raw_result.raw[u'properties'][u'match_type'] + ' source '+raw_result.raw[u'properties'][u'source']+' ]'
                             result_places[place] = point
                             cnt -= 1
                     else:
@@ -289,7 +338,12 @@ class Geocode:
                                 point = result_places[unicode(place_sel_dlg.select_appropriate_address.currentText())]
                                 self.proccesing_point(point,place_sel_dlg.select_appropriate_address.currentText())
                 else:
-                    QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Adress not found'),QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the searched addresses : %s'% str_addr,encoding = 1))
+                    list_of_ungeocoded_address.append(encode_addr.decode('utf-8'))
+                    #QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Adress not found'),QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the following addresses : %s'% str_addr, encoding =1))
+            if len(list_of_ungeocoded_address)>1:
+                QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Adress not found'),QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the following addresses : %s'% '\n'.join(list_of_ungeocoded_address),encoding=1))
+            QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode', u'Geocoder has finished the action'),QCoreApplication.translate(u'Geocode',u'The results of geocoding proces are stored in "Results of Geocoding" layer.'))
+
 
 
     def type_to_geocode(self):
