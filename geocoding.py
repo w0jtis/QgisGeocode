@@ -200,7 +200,7 @@ class Geocode:
             self.layer= QgsVectorLayer("Point","Results of Geocoding", "memory")
             self.provider = self.layer.dataProvider()
             self.layer.setCrs(self.canvas.mapRenderer().destinationCrs())
-            self.provider.addAttributes([QgsField("Addres information from layer", QVariant.String)])
+            self.provider.addAttributes([QgsField("Address information from layer", QVariant.String)])
             self.provider.addAttributes([QgsField("Address result", QVariant.String)])
             self.provider.addAttributes([QgsField("X_coordinate", QVariant.Double)])
             self.provider.addAttributes([QgsField("Y_coordinate", QVariant.Double)])
@@ -215,12 +215,12 @@ class Geocode:
         field = self.layer.pendingFields()
         feat = QgsFeature(field)
         feat.setGeometry(QgsGeometry.fromPoint(point))
-        feat['Addres information from layer']=self.encode_addr.decode('utf-8')
+        feat['Address information from layer']=self.encode_addr.decode('utf-8')
         feat['Address result'] = address
         feat['X_coordinate'] = point[0]
         feat['Y_coordinate'] = point[1]
-        feat['LON_WGS84']=self.point_lon_lat[1]
-        feat['LAT_WGS84']=self.point_lon_lat[0]
+        feat['LON_WGS84']=self.point_lon_lat[0]
+        feat['LAT_WGS84']=self.point_lon_lat[1]
         feat['Geocoder']= self.geocoder_instacne()[1]
         self.provider.addFeatures([ feat ])
         self.layer.updateExtents()
@@ -341,7 +341,7 @@ class Geocode:
                     list_of_ungeocoded_address.append(encode_addr.decode('utf-8'))
                     #QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Adress not found'),QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the following addresses : %s'% str_addr, encoding =1))
             if len(list_of_ungeocoded_address)>1:
-                QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Adress not found'),QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the following addresses : %s'% '\n'.join(list_of_ungeocoded_address),encoding=1))
+                QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Address not found'),QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the following addresses : %s'% '\n'.join(list_of_ungeocoded_address),encoding=1))
             QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode', u'Geocoder has finished the action'),QCoreApplication.translate(u'Geocode',u'The results of geocoding proces are stored in "Results of Geocoding" layer.'))
 
 
