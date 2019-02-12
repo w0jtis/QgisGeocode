@@ -161,6 +161,7 @@ class Geocode:
 
 
     def geocoder_instacne(self):
+
         service_api = self.dlg.service_api.text()
         if len(self.dlg.pelias_domain.text())>0:
             self.pelias_domain = self.dlg.pelias_domain.text()
@@ -259,10 +260,11 @@ class Geocode:
 
     def check_that_layer_field_is_string(self):
         field=self.selected_layer.pendingFields()
-        if field[self.dlg.column_combo.currentIndex()].typeName()==u'String':
+        if field[self.dlg.column_combo.currentIndex()].type()==10:
             return True
         else:
-            message_layer_field = QMessageBox.information(self.iface.mainWindow(), QCoreApplication.translate(u'Geocode',u'You need to select the sting type column '),QCoreApplication.translate(u'Geocdoe',u'Check that selected column is of the string type                              '))
+            message_layer_field = QMessageBox.information(self.iface.mainWindow(), QCoreApplication.translate(u'Geocode',u'Check that type of selected column is a "String"'),\
+                                                          QCoreApplication.translate(u'Geocdoe',u' You have to choose a column whose type is a "String"'))
             return message_layer_field
 
     def check_the_geocoding_result(self,result_from_geocoder):
@@ -294,7 +296,7 @@ class Geocode:
 
     def geocoding(self,execute):
 
-        if execute :
+        if execute and self.check_that_layer_field_is_string()==True :
             self.sel_proj = self.set_projection()
             list_of_ungeocoded_address=[]
             list_of_ungeocoded_address.append('\n')
@@ -305,15 +307,28 @@ class Geocode:
                 str_addr =attrs[self.dlg.column_combo.currentIndex()]
                 encode_addr= str_addr.encode('utf-8')
                 self.encode_addr=encode_addr
-                geocoding_result = geocoder.geocode(encode_addr, exactly_one=False)
-                geocoding_result=self.check_the_geocoding_result(geocoding_result)
+                try :
+                    geocoding_result = geocoder.geocode(encode_addr, exactly_one=False)
+                except Exception,self.exception:
+                    QMessageBox.information(self.iface.mainWindow(), QCoreApplication.translate(u'Geocode',u'Gecoder encounter some problem'),\
+                    QCoreApplication.translate(u'Geocode',
+                    u'1) Check your intennet connection.\n2) Chcek that you have given a suitable url address of Pelias instance.\n3) Check that you have given correct api key for Bing or Google service.'))
+                    break
+                try:
+                    geocoding_result=self.check_the_geocoding_result(geocoding_result)
+                except ImportError :
+                    QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode', u'Geocoder can not import the Shapely library'),\
+                    QCoreApplication.translate(u'Geocode', u'Check that Shapely library is in Utils folder in plugin dictionary'))
+                    break
+
                 if geocoding_result:
                     if self.geocoder_instacne()[1] == u'Pelias':
                         len_of_raw_resoult = len(geocoding_result)
                         cnt = len_of_raw_resoult
                         for place, point in geocoding_result:
                             raw_result = geocoding_result[(len_of_raw_resoult - cnt)]
-                            place = raw_result.raw[u'properties'][u'label']  +', postcode: '+raw_result.raw[u'properties'][u'postalcode']+ ', county: '+ raw_result.raw[u'properties'][u'county']+', accuracy parameters ' + '[ match type:' + raw_result.raw[u'properties'][u'match_type'] + ' source '+raw_result.raw[u'properties'][u'source']+' ]'
+                            place = raw_result.raw[u'properties'][u'label']  +', postcode: '+raw_result.raw[u'properties'][u'postalcode']+ ', county: '+ raw_result.raw[u'properties'][u'county']+\
+                                    ', accuracy parameters '+ '[ match type:' + raw_result.raw[u'properties'][u'match_type'] + ' source '+raw_result.raw[u'properties'][u'source']+' ]'
                             result_places[place] = point
                             cnt -= 1
                     else:
@@ -323,7 +338,8 @@ class Geocode:
                     if len(result_places) == 1:
                         self.proccesing_point(point, place)
                     else:
-                        QMessageBox.information(self.iface.mainWindow(), QCoreApplication.translate(u'Geocode',u'Geocoder found more than one location'),QCoreApplication.translate(u'Geocdoe',u'Geocoder found more than one loaction for searched address : %s' % str_addr,encoding = 1))
+                        QMessageBox.information(self.iface.mainWindow(), QCoreApplication.translate(u'Geocode',u'Geocoder found more than one location'),\
+                                                QCoreApplication.translate(u'Geocdoe',u'Geocoder found more than one loaction for searched address : %s' % str_addr,encoding = 1))
                         geocode_all=QCoreApplication.translate(u'Geocode',u'Geocode all')
                         place_sel_dlg=select_box()
                         place_sel_dlg.select_appropriate_address.addItem(geocode_all)
@@ -337,23 +353,35 @@ class Geocode:
                             else:
                                 point = result_places[unicode(place_sel_dlg.select_appropriate_address.currentText())]
                                 self.proccesing_point(point,place_sel_dlg.select_appropriate_address.currentText())
+                        else:
+                            list_of_ungeocoded_address.append(encode_addr.decode('utf-8'))
                 else:
                     list_of_ungeocoded_address.append(encode_addr.decode('utf-8'))
-                    #QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Adress not found'),QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the following addresses : %s'% str_addr, encoding =1))
+                    #QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Adress not found'),\
+                    # QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the following addresses : %s'% str_addr, encoding =
+
             if len(list_of_ungeocoded_address)>1:
-                QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Address not found'),QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the following addresses : %s'% '\n'.join(list_of_ungeocoded_address),encoding=1))
-            QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode', u'Geocoder has finished the action'),QCoreApplication.translate(u'Geocode',u'The results of geocoding proces are stored in "Results of Geocoding" layer.'))
+                QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Address not found'),\
+                                        QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the following addresses : %s'% '\n'.join(list_of_ungeocoded_address),encoding=1))
+            if len(result_places)>0:
+                QMessageBox.information(self.iface.mainWindow(),
+                                    QCoreApplication.translate(u'Geocode', u'Geocoder has finished the action'), \
+                                    QCoreApplication.translate(u'Geocode', u'The results of geocoding proces are stored in "Results of Geocoding" layer.'))
 
 
 
+
+    ''' To do - add some dialog box to geocode addresses which user type in specific field
     def type_to_geocode(self):
         self.dlg.find_address.clear()
         type_addr=self.dlg.find_address.text()
 
         return type_addr
-
+    '''
 
 
     def run(self):
+
         self.geocoding(self.prepare_to_geocode())
+
         return
