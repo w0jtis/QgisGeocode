@@ -27,6 +27,7 @@ from qgis.core import *
 import resources
 from geocoding_dialog import Geocode_Dialog
 from select_address_box import select_box
+from ungeocoded_list_dialog import ungeocoded_list
 from qgis.gui import QgsGenericProjectionSelector
 import os
 import sys
@@ -299,7 +300,6 @@ class Geocode:
         if execute and self.check_that_layer_field_is_string()==True :
             self.sel_proj = self.set_projection()
             list_of_ungeocoded_address=[]
-            list_of_ungeocoded_address.append('\n')
             for feat in self.selected_layer.getFeatures():
                 attrs = feat.attributes()
                 result_places={}
@@ -357,12 +357,14 @@ class Geocode:
                             list_of_ungeocoded_address.append(encode_addr.decode('utf-8'))
                 else:
                     list_of_ungeocoded_address.append(encode_addr.decode('utf-8'))
-                    #QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Adress not found'),\
-                    # QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the following addresses : %s'% str_addr, encoding =
 
             if len(list_of_ungeocoded_address)>1:
-                QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Address not found'),\
-                                        QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the following addresses : %s'% '\n'.join(list_of_ungeocoded_address),encoding=1))
+               # QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Address not found'),\
+                                        #QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the following addresses : %s'% '\n'.join(list_of_ungeocoded_address),encoding=1))
+                ungeocoded=ungeocoded_list()
+                ungeocoded.un_address.append('The geocoder has not found the following addresses :')
+                ungeocoded.un_address.append('\n'.join(list_of_ungeocoded_address))
+                ungeocoded.exec_()
             if len(result_places)>0:
                 QMessageBox.information(self.iface.mainWindow(),
                                     QCoreApplication.translate(u'Geocode', u'Geocoder has finished the action'), \

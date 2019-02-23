@@ -10,6 +10,24 @@
     <height>318</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>593</width>
+    <height>318</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>593</width>
+    <height>318</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>Geocode</string>
   </property>
@@ -38,12 +56,18 @@
      <height>261</height>
     </rect>
    </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="currentIndex">
     <number>0</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
-     <string>Geocode the address</string>
+     <string>Geocoder configuration</string>
     </attribute>
     <widget class="QComboBox" name="geocoder_box">
      <property name="geometry">
@@ -114,15 +138,26 @@
       </rect>
      </property>
     </widget>
+    <widget class="QWidget" name="verticalLayoutWidget">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>2</width>
+       <height>2</height>
+      </rect>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout"/>
+    </widget>
    </widget>
    <widget class="QWidget" name="tab_2">
     <attribute name="title">
-     <string>Optional parameters</string>
+     <string>Additional parameters</string>
     </attribute>
     <widget class="QLineEdit" name="service_api">
      <property name="geometry">
       <rect>
-       <x>185</x>
+       <x>200</x>
        <y>5</y>
        <width>361</width>
        <height>29</height>
@@ -138,7 +173,7 @@
     <widget class="QLineEdit" name="pelias_domain">
      <property name="geometry">
       <rect>
-       <x>185</x>
+       <x>200</x>
        <y>95</y>
        <width>361</width>
        <height>29</height>
@@ -177,7 +212,7 @@
     <widget class="QLabel" name="label_6">
      <property name="geometry">
       <rect>
-       <x>185</x>
+       <x>200</x>
        <y>45</y>
        <width>361</width>
        <height>17</height>
@@ -190,7 +225,7 @@
     <widget class="QLabel" name="label_7">
      <property name="geometry">
       <rect>
-       <x>185</x>
+       <x>200</x>
        <y>65</y>
        <width>361</width>
        <height>17</height>
@@ -203,7 +238,7 @@
     <widget class="QLabel" name="label_8">
      <property name="geometry">
       <rect>
-       <x>185</x>
+       <x>200</x>
        <y>135</y>
        <width>361</width>
        <height>17</height>
@@ -229,7 +264,7 @@
     <widget class="QLineEdit" name="epsg_data">
      <property name="geometry">
       <rect>
-       <x>185</x>
+       <x>200</x>
        <y>175</y>
        <width>361</width>
        <height>29</height>
