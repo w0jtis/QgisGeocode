@@ -6,7 +6,7 @@ version=0.1
 author=Wojciech Sukta
 email=suktaa.wojciech@gmail.com
 
-about= This plugin allows user to geocode with following services:Pelias, Nominatim(OSM), GoogleV3, Photon. The ressults are stored in temporary layer with addres infromation, X and Y coorndinates and geocoder service name.
+about= This plugin allows user to geocode with following services : Pelias, Nominatim(OSM), GoogleV3, Bing.The results are stored in temporary layer, that contains address information, X and Y coordinates in specific coordinate reference system,XY coordinates from reference database and geocoder service name.
 
 tracker=http://bugs
 repository=http://repo

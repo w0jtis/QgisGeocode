@@ -2,8 +2,11 @@
 """
 /***************************************************************************
 Name                 : Geocode
-Description          : Plugins that allows user with following services:Pelias,
-                       Nominatim(OSM), GoogleV3, Photon.
+Description          : This plugin allows user to geocode with following services : 
+                       Pelias, Nominatim(OSM), GoogleV3, Bing.The results are 
+                       stored in temporary layer, that contains address information, 
+                       XY coordinates in specific coordinate reference system,
+                       XY coordinates from reference database and geocoder service name.
 Date                 : 15/August/2018
 copyright            : Wojciech Sukta
 email                : suktaa.wojciech@gmail.com
