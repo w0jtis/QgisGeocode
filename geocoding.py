@@ -344,18 +344,17 @@ class Geocode:
                     else:
                         QMessageBox.information(self.iface.mainWindow(), QCoreApplication.translate(u'Geocode',u'Geocoder found more than one location'),\
                                                 QCoreApplication.translate(u'Geocdoe',u'Geocoder found more than one loaction for searched address : %s' % str_addr,encoding = 1))
-                        
-                        place_sel_dlg.select_appropriate_address.addItem(geocode_all)
+                        place_sel_dlg=select_box()
                         place_sel_dlg.select_appropriate_address.addItems(result_places.keys())
                         place_sel_dlg.show()
                         result=place_sel_dlg.exec_()
                         if result:
-                            if place_sel_dlg.select_appropriate_address.currentText()==geocode_all:
-                                for i in result_places:
-                                    self.proccesing_point(result_places[i],i)
-                            else:
-                                point = result_places[unicode(place_sel_dlg.select_appropriate_address.currentText())]
-                                self.proccesing_point(point,place_sel_dlg.select_appropriate_address.currentText())
+                            #if place_sel_dlg.select_appropriate_address.currentText()==geocode_all:
+                             #   for i in result_places:
+                                    #self.proccesing_point(result_places[i],i)
+                            #else:
+                            point = result_places[unicode(place_sel_dlg.select_appropriate_address.currentText())]
+                            self.proccesing_point(point,place_sel_dlg.select_appropriate_address.currentText())
                         else:
                             list_of_ungeocoded_address.append(encode_addr.decode('utf-8'))
                 else:
