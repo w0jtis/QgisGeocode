@@ -26,17 +26,30 @@ import os
 
 from PyQt4 import QtGui, uic
 
+
+
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'ungeocoded_list.ui'))
+    os.path.dirname(__file__), 'Select_address_dialog.ui'))
 
+FORM_CLASS_2, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), 'Ungeocoded_list.ui'))
 
-class ungeocoded_list(QtGui.QDialog, FORM_CLASS):
+FORM_CLASS_3, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), 'Finish_dialog.ui'))
+
+class select_box(QtGui.QDialog, FORM_CLASS):
     def __init__(self, parent=None):
-        """Constructor."""
-        super(ungeocoded_list, self).__init__(parent)
-        # Set up the user interface from Designer.
-        # After setupUI you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
+        super(select_box, self).__init__(parent)
         self.setupUi(self)
+
+class ungeocoded_list(QtGui.QDialog, FORM_CLASS_2):
+    def __init__(self, parent=None):
+        super(ungeocoded_list, self).__init__(parent)
+        self.setupUi(self)
+
+class finish_dialog(QtGui.QDialog, FORM_CLASS_3):
+    def __init__(self, parent=None):
+        super(finish_dialog, self).__init__(parent)
+        self.setupUi(self)
+
+

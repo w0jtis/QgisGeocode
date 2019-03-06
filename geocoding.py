@@ -23,14 +23,13 @@ email                : suktaa.wojciech@gmail.com
 """
 
 
-
+from __future__ import division
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from qgis.core import *
 import resources
-from geocoding_dialog import Geocode_Dialog
-from select_address_box import select_box
-from ungeocoded_list_dialog import ungeocoded_list
+from geocoding_dialog import Geocoding_dialog
+from other_dialogs import *
 from qgis.gui import QgsGenericProjectionSelector
 import os
 import sys
@@ -52,7 +51,7 @@ class Geocode:
             sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'libs'))
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
-        self.dlg = Geocode_Dialog()
+        self.dlg = Geocoding_dialog()
         # initialize locale
         locale = QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
@@ -300,12 +299,14 @@ class Geocode:
 
     def geocoding(self,execute):
 
+
         if execute and self.check_that_layer_field_is_string()==True :
             self.sel_proj = self.set_projection()
             list_of_ungeocoded_address=[]
+            number_of_all_addresses = self.selected_layer.featureCount()
             for feat in self.selected_layer.getFeatures():
+                result_places = {}
                 attrs = feat.attributes()
-                result_places={}
                 geocoder = self.geocoder_instacne()[0]
                 str_addr =attrs[self.dlg.column_combo.currentIndex()]
                 encode_addr= str_addr.encode('utf-8')
@@ -343,8 +344,7 @@ class Geocode:
                     else:
                         QMessageBox.information(self.iface.mainWindow(), QCoreApplication.translate(u'Geocode',u'Geocoder found more than one location'),\
                                                 QCoreApplication.translate(u'Geocdoe',u'Geocoder found more than one loaction for searched address : %s' % str_addr,encoding = 1))
-                        geocode_all=QCoreApplication.translate(u'Geocode',u'Geocode all')
-                        place_sel_dlg=select_box()
+                        
                         place_sel_dlg.select_appropriate_address.addItem(geocode_all)
                         place_sel_dlg.select_appropriate_address.addItems(result_places.keys())
                         place_sel_dlg.show()
@@ -361,17 +361,20 @@ class Geocode:
                 else:
                     list_of_ungeocoded_address.append(encode_addr.decode('utf-8'))
 
-            if len(list_of_ungeocoded_address)>1:
-               # QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode',u'Address not found'),\
-                                        #QCoreApplication.translate(u'Geocdoe',u'The geocoder has not found the following addresses : %s'% '\n'.join(list_of_ungeocoded_address),encoding=1))
+            if len(result_places)>0:
+                matched_addresses = number_of_all_addresses-len(list_of_ungeocoded_address)
+                match_rate = matched_addresses/number_of_all_addresses*100
+                finish_dlg=finish_dialog()
+                finish_dlg.pBar.setValue(match_rate)
+                expresion= '%d / %d' % (matched_addresses,number_of_all_addresses)
+                finish_dlg.amount.setText(expresion)
+                finish_dlg.exec_()
+
+            if len(list_of_ungeocoded_address)>=1:
                 ungeocoded=ungeocoded_list()
                 ungeocoded.un_address.append('The geocoder has not found the following addresses :')
                 ungeocoded.un_address.append('\n'.join(list_of_ungeocoded_address))
                 ungeocoded.exec_()
-            if len(result_places)>0:
-                QMessageBox.information(self.iface.mainWindow(),
-                                    QCoreApplication.translate(u'Geocode', u'Geocoder has finished the action'), \
-                                    QCoreApplication.translate(u'Geocode', u'The results of geocoding proces are stored in "Results of Geocoding" layer.'))
 
 
 
