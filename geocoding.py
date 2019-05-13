@@ -210,7 +210,7 @@ class Geocode:
             self.provider.addAttributes([QgsField("Y_coordinate", QVariant.Double)])
             self.provider.addAttributes([QgsField("LON_WGS84", QVariant.Double)])
             self.provider.addAttributes([QgsField("LAT_WGS84", QVariant.Double)])
-            self.provider.addAttributes([QgsField("Geocoder", QVariant.String)])
+            self.provider.addAttributes([QgsField("Name of geocoding service", QVariant.String)])
 
             self.layer.updateFields()
             QgsMapLayerRegistry.instance().addMapLayer(self.layer)
@@ -225,7 +225,7 @@ class Geocode:
         feat['Y_coordinate'] = point[1]
         feat['LON_WGS84']=self.point_lon_lat[0]
         feat['LAT_WGS84']=self.point_lon_lat[1]
-        feat['Geocoder']= self.geocoder_instacne()[1]
+        feat['Name of geocoding service']= self.geocoder_instacne()[1]
         self.provider.addFeatures([ feat ])
         self.layer.updateExtents()
         self.canvas.refresh()
@@ -267,7 +267,7 @@ class Geocode:
             return True
         else:
             message_layer_field = QMessageBox.information(self.iface.mainWindow(), QCoreApplication.translate(u'Geocode',u'Check that type of selected column is a "String"'),\
-                                                          QCoreApplication.translate(u'Geocdoe',u' You have to choose a column whose type is a "String"'))
+                                                          QCoreApplication.translate(u'Geocdoe',u' You have to choose a column whose type is a "String"     '))
             return message_layer_field
 
     def check_the_geocoding_result(self,result_from_geocoder):
@@ -313,6 +313,8 @@ class Geocode:
                 self.encode_addr=encode_addr
                 try :
                     geocoding_result = geocoder.geocode(encode_addr, exactly_one=False)
+                    pelias_geocoding_result=geocoder.geocode(encode_addr, exactly_one=False)
+
                 except Exception,self.exception:
                     QMessageBox.information(self.iface.mainWindow(), QCoreApplication.translate(u'Geocode',u'Gecoder encounter some problem'),\
                     QCoreApplication.translate(u'Geocode',
@@ -327,14 +329,13 @@ class Geocode:
 
                 if geocoding_result:
                     if self.geocoder_instacne()[1] == u'Pelias':
-                        len_of_raw_resoult = len(geocoding_result)
-                        cnt = len_of_raw_resoult
-                        for place, point in geocoding_result:
-                            raw_result = geocoding_result[(len_of_raw_resoult - cnt)]
-                            place = raw_result.raw[u'properties'][u'label']  +', postcode: '+raw_result.raw[u'properties'][u'postalcode']+ ', county: '+ raw_result.raw[u'properties'][u'county']+\
-                                    ', accuracy parameters '+ '[ match type:' + raw_result.raw[u'properties'][u'match_type'] + ' source '+raw_result.raw[u'properties'][u'source']+' ]'
+                        cnt = 0
+                        for place, point in pelias_geocoding_result:
+                            raw_result = pelias_geocoding_result[cnt]
+                            place = raw_result.raw[u'properties'][u'label']  + u', county: '+ raw_result.raw[u'properties'][u'county']+\
+                                    u', accuracy parameters '+ u'[ match type:' + raw_result.raw[u'properties'][u'match_type'] + u' source '+raw_result.raw[u'properties'][u'source']+u' ]'
                             result_places[place] = point
-                            cnt -= 1
+                            cnt += 1
                     else:
                         for place, point in geocoding_result:
                             result_places[place] = point
