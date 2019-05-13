@@ -313,7 +313,7 @@ class Geocode:
                 self.encode_addr=encode_addr
                 try :
                     geocoding_result = geocoder.geocode(encode_addr, exactly_one=False)
-                    pelias_geocoding_result=geocoder.geocode(encode_addr, exactly_one=False)
+                    #pelias_geocoding_result=geocoder.geocode(encode_addr, exactly_one=False) dopracować to itd
 
                 except Exception,self.exception:
                     QMessageBox.information(self.iface.mainWindow(), QCoreApplication.translate(u'Geocode',u'Gecoder encounter some problem'),\
@@ -321,23 +321,23 @@ class Geocode:
                     u'1) Check your intennet connection.\n2) Chcek that you have given a suitable url address of Pelias instance.\n3) Check that you have given correct api key for Bing or Google service.'))
                     break
                 try:
-                    geocoding_result=self.check_the_geocoding_result(geocoding_result)
+                    geocoding_result_checked=self.check_the_geocoding_result(geocoding_result)
                 except ImportError :
                     QMessageBox.information(self.iface.mainWindow(),QCoreApplication.translate(u'Geocode', u'Geocoder can not import the Shapely library'),\
                     QCoreApplication.translate(u'Geocode', u'Check that Shapely library is in Utils folder in plugin dictionary'))
                     break
 
-                if geocoding_result:
+                if geocoding_result_checked:
                     if self.geocoder_instacne()[1] == u'Pelias':
                         cnt = 0
-                        for place, point in pelias_geocoding_result:
-                            raw_result = pelias_geocoding_result[cnt]
+                        for place, point in geocoding_result:
+                            raw_result = geocoding_result[cnt]
                             place = raw_result.raw[u'properties'][u'label']  + u', county: '+ raw_result.raw[u'properties'][u'county']+\
                                     u', accuracy parameters '+ u'[ match type:' + raw_result.raw[u'properties'][u'match_type'] + u' source '+raw_result.raw[u'properties'][u'source']+u' ]'
                             result_places[place] = point
                             cnt += 1
                     else:
-                        for place, point in geocoding_result:
+                        for place, point in geocoding_result_checked:
                             result_places[place] = point
 
                     if len(result_places) == 1:
@@ -350,10 +350,6 @@ class Geocode:
                         place_sel_dlg.show()
                         result=place_sel_dlg.exec_()
                         if result:
-                            #if place_sel_dlg.select_appropriate_address.currentText()==geocode_all:
-                             #   for i in result_places:
-                                    #self.proccesing_point(result_places[i],i)
-                            #else:
                             point = result_places[unicode(place_sel_dlg.select_appropriate_address.currentText())]
                             self.proccesing_point(point,place_sel_dlg.select_appropriate_address.currentText())
                         else:
